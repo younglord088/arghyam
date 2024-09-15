@@ -1,9 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../UserContext';
 
 const UserContribution = () => {
   const [selectedForm, setSelectedForm] = useState(null);
+  const navigate = useNavigate();
+  const { user, loading } = useUser(); 
 
-  // Determine the URL based on the selected form
+  console.log('Users',user)
+
   const getIframeSrc = () => {
     switch (selectedForm) {
       case "event":
@@ -17,6 +22,31 @@ const UserContribution = () => {
     }
   };
 
+  // Handle redirection based on user login status
+  useEffect(() => {
+    if (!loading && !user) {
+      // Save the current path the user is trying to access
+      const currentPath = window.location.pathname;
+      localStorage.setItem('intendedPath', currentPath);
+
+      // Redirect to external login page if the user is not logged in
+      window.location.href = 'https://indiawaterportal-demo.madrid.quintype.io/sign-in';
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    // After login, check if the intended path exists, and redirect the user to that path
+    const intendedPath = localStorage.getItem('intendedPath');
+    if (user && intendedPath) {
+      localStorage.removeItem('intendedPath'); // Clear the stored path
+      navigate(intendedPath); // Redirect the user to the stored path
+    }
+  }, [user, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>; // Show a loading message while checking login status
+  }
+
   return (
     <div>
       <h2>User Contributions</h2>
@@ -29,6 +59,9 @@ const UserContribution = () => {
         </button>
         <button onClick={() => setSelectedForm("opportunity")} style={buttonStyle}>
           Contribute an Opportunity
+        </button>
+        <button onClick={() => navigate('/use')} style={buttonStyle}>
+          My Contribution
         </button>
       </div>
       {selectedForm && (
